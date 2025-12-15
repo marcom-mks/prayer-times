@@ -164,6 +164,19 @@
             margin-top: 5px;
         }
 
+        .loading {
+            text-align: center;
+            color: #fcd34d;
+            padding: 20px;
+        }
+
+        .error {
+            text-align: center;
+            color: #fca5a5;
+            padding: 10px;
+            font-size: 12px;
+        }
+
         @media (min-width: 400px) {
             .container {
                 max-width: 350px;
@@ -202,25 +215,25 @@
         </div>
 
         <div class="prayer-times">
-            <div class="prayer-item" id="fajr-item">
-                <span class="prayer-name">Fajr</span>
-                <span class="prayer-time" id="fajr">--:--</span>
+            <div class="prayer-item" id="subuh-item">
+                <span class="prayer-name">Subuh</span>
+                <span class="prayer-time" id="subuh">--:--</span>
             </div>
-            <div class="prayer-item" id="dhuhr-item">
-                <span class="prayer-name">Dhuhr</span>
-                <span class="prayer-time" id="dhuhr">--:--</span>
+            <div class="prayer-item" id="zohor-item">
+                <span class="prayer-name">Zohor</span>
+                <span class="prayer-time" id="zohor">--:--</span>
             </div>
-            <div class="prayer-item" id="asr-item">
-                <span class="prayer-name">Asr</span>
-                <span class="prayer-time" id="asr">--:--</span>
+            <div class="prayer-item" id="asar-item">
+                <span class="prayer-name">Asar</span>
+                <span class="prayer-time" id="asar">--:--</span>
             </div>
             <div class="prayer-item" id="maghrib-item">
                 <span class="prayer-name">Maghrib</span>
                 <span class="prayer-time" id="maghrib">--:--</span>
             </div>
-            <div class="prayer-item" id="isha-item">
-                <span class="prayer-name">Isha</span>
-                <span class="prayer-time" id="isha">--:--</span>
+            <div class="prayer-item" id="isyak-item">
+                <span class="prayer-name">Isyak</span>
+                <span class="prayer-time" id="isyak">--:--</span>
             </div>
         </div>
 
@@ -231,171 +244,133 @@
     </div>
 
     <script>
-        // Singapore coordinates
-        const LAT = 1.3521;
-        const LNG = 103.8198;
+        let prayerData = {};
+        const API_URL = 'https://data.gov.sg/api/action/datastore_search?resource_id=d_a6a206cba471fe04b62dd886ef5eaf22';
 
-        // Prayer calculation using simplified algorithm for Singapore/MUIS method
-        function calculatePrayerTimes(date) {
-            const times = {};
-            const jd = julianDate(date);
-            const eqt = equationOfTime(jd);
-            const decl = sunDeclination(jd);
-            
-            // MUIS uses specific angles
-            times.fajr = computeTime(20, 'fajr', date, eqt, decl);
-            times.dhuhr = computeTime(0, 'dhuhr', date, eqt, decl);
-            times.asr = computeTime(0, 'asr', date, eqt, decl);
-            times.maghrib = computeTime(1, 'maghrib', date, eqt, decl);
-            times.isha = computeTime(18, 'isha', date, eqt, decl);
-            
-            return times;
-        }
-
-        function julianDate(date) {
-            const y = date.getFullYear();
-            const m = date.getMonth() + 1;
-            const d = date.getDate();
-            
-            if (m <= 2) {
-                return Math.floor(365.25 * (y - 1)) + Math.floor(30.6001 * (m + 13)) + d + 1720995;
-            }
-            return Math.floor(365.25 * y) + Math.floor(30.6001 * (m + 1)) + d + 1720995;
-        }
-
-        function equationOfTime(jd) {
-            const d = jd - 2451545.0;
-            const g = 357.529 + 0.98560028 * d;
-            const q = 280.459 + 0.98564736 * d;
-            const l = q + 1.915 * Math.sin(g * Math.PI / 180) + 0.020 * Math.sin(2 * g * Math.PI / 180);
-            const e = -1.915 * Math.sin(g * Math.PI / 180) - 0.020 * Math.sin(2 * g * Math.PI / 180) + 2.466 * Math.sin(2 * l * Math.PI / 180) - 0.053 * Math.sin(4 * l * Math.PI / 180);
-            return e;
-        }
-
-        function sunDeclination(jd) {
-            const d = jd - 2451545.0;
-            const g = 357.529 + 0.98560028 * d;
-            const q = 280.459 + 0.98564736 * d;
-            const l = q + 1.915 * Math.sin(g * Math.PI / 180) + 0.020 * Math.sin(2 * g * Math.PI / 180);
-            const e = 23.439 - 0.00000036 * d;
-            const decl = Math.asin(Math.sin(e * Math.PI / 180) * Math.sin(l * Math.PI / 180)) * 180 / Math.PI;
-            return decl;
-        }
-
-        function computeTime(angle, prayer, date, eqt, decl) {
-            let time = 12;
-            
-            if (prayer === 'dhuhr') {
-                time = 12 - (LNG / 15) + (eqt / 60);
-            } else if (prayer === 'asr') {
-                const asrAngle = Math.atan(1 / (1 + Math.tan(Math.abs(LAT - decl) * Math.PI / 180))) * 180 / Math.PI;
-                const cosH = (Math.sin((90 - asrAngle) * Math.PI / 180) - Math.sin(LAT * Math.PI / 180) * Math.sin(decl * Math.PI / 180)) / (Math.cos(LAT * Math.PI / 180) * Math.cos(decl * Math.PI / 180));
-                const h = Math.acos(cosH) * 180 / Math.PI / 15;
-                time = 12 + h - (LNG / 15) + (eqt / 60);
-            } else {
-                const cosH = (Math.sin(-angle * Math.PI / 180) - Math.sin(LAT * Math.PI / 180) * Math.sin(decl * Math.PI / 180)) / (Math.cos(LAT * Math.PI / 180) * Math.cos(decl * Math.PI / 180));
+        // Fetch prayer times from MUIS API
+        async function fetchPrayerTimes() {
+            try {
+                const today = new Date();
+                const dateStr = today.toISOString().split('T')[0];
                 
-                if (Math.abs(cosH) <= 1) {
-                    const h = Math.acos(cosH) * 180 / Math.PI / 15;
+                // Fetch data with date filter
+                const response = await fetch(`${API_URL}&limit=1&filters={"Date":"${dateStr}"}`);
+                const data = await response.json();
+                
+                if (data.success && data.result.records.length > 0) {
+                    const record = data.result.records[0];
+                    prayerData = {
+                        subuh: record.Subuh,
+                        zohor: record.Zohor,
+                        asar: record.Asar,
+                        maghrib: record.Maghrib,
+                        isyak: record.Isyak
+                    };
                     
-                    if (prayer === 'fajr') {
-                        time = 12 - h - (LNG / 15) + (eqt / 60);
-                    } else if (prayer === 'isha') {
-                        time = 12 + h - (LNG / 15) + (eqt / 60);
-                    } else if (prayer === 'maghrib') {
-                        time = 12 + h - (LNG / 15) + (eqt / 60);
-                    }
+                    updatePrayerDisplay();
+                } else {
+                    console.error('No prayer data found for today');
                 }
+            } catch (error) {
+                console.error('Error fetching prayer times:', error);
             }
-            
-            // Adjust for timezone (Singapore is UTC+8)
-            time += 8;
-            
-            // Handle day overflow
-            if (time >= 24) time -= 24;
-            if (time < 0) time += 24;
-            
-            return time;
         }
 
-        function formatTime(decimalTime) {
-            const hours = Math.floor(decimalTime);
-            const minutes = Math.floor((decimalTime - hours) * 60);
-            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        function updatePrayerDisplay() {
+            // Display prayer times (format is already HH:mm:ss from API, we show HH:mm)
+            document.getElementById('subuh').textContent = prayerData.subuh.substring(0, 5);
+            document.getElementById('zohor').textContent = prayerData.zohor.substring(0, 5);
+            document.getElementById('asar').textContent = prayerData.asar.substring(0, 5);
+            document.getElementById('maghrib').textContent = prayerData.maghrib.substring(0, 5);
+            document.getElementById('isyak').textContent = prayerData.isyak.substring(0, 5);
         }
 
-        function updateDisplay() {
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function updateCountdown() {
             const now = new Date();
-            const times = calculatePrayerTimes(now);
-            
-            // Display prayer times
-            document.getElementById('fajr').textContent = formatTime(times.fajr);
-            document.getElementById('dhuhr').textContent = formatTime(times.dhuhr);
-            document.getElementById('asr').textContent = formatTime(times.asr);
-            document.getElementById('maghrib').textContent = formatTime(times.maghrib);
-            document.getElementById('isha').textContent = formatTime(times.isha);
-            
-            // Current time
             const currentHours = now.getHours().toString().padStart(2, '0');
             const currentMinutes = now.getMinutes().toString().padStart(2, '0');
             const currentSeconds = now.getSeconds().toString().padStart(2, '0');
+            
+            // Update current time
             document.getElementById('currentTime').textContent = `${currentHours}:${currentMinutes}:${currentSeconds}`;
             
-            // Current date
+            // Update date
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('currentDate').textContent = now.toLocaleDateString('en-SG', options);
             
-            // Find next prayer and update countdown
-            const currentTime = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
-            const prayers = [
-                { name: 'Fajr', time: times.fajr, id: 'fajr' },
-                { name: 'Dhuhr', time: times.dhuhr, id: 'dhuhr' },
-                { name: 'Asr', time: times.asr, id: 'asr' },
-                { name: 'Maghrib', time: times.maghrib, id: 'maghrib' },
-                { name: 'Isha', time: times.isha, id: 'isha' }
-            ];
-            
-            // Remove all active classes
-            prayers.forEach(p => {
-                document.getElementById(`${p.id}-item`).classList.remove('active');
-            });
-            
-            let nextPrayer = null;
-            for (let prayer of prayers) {
-                if (currentTime < prayer.time) {
-                    nextPrayer = prayer;
-                    break;
-                }
-            }
-            
-            // If no prayer found today, next is Fajr tomorrow
-            if (!nextPrayer) {
-                nextPrayer = prayers[0];
-                const timeUntilMidnight = (24 - currentTime) * 3600;
-                const timeAfterMidnight = nextPrayer.time * 3600;
-                const totalSeconds = timeUntilMidnight + timeAfterMidnight;
+            // Calculate countdown to next prayer
+            if (Object.keys(prayerData).length > 0) {
+                const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
                 
+                const prayers = [
+                    { name: 'Subuh', time: prayerData.subuh, id: 'subuh' },
+                    { name: 'Zohor', time: prayerData.zohor, id: 'zohor' },
+                    { name: 'Asar', time: prayerData.asar, id: 'asar' },
+                    { name: 'Maghrib', time: prayerData.maghrib, id: 'maghrib' },
+                    { name: 'Isyak', time: prayerData.isyak, id: 'isyak' }
+                ];
+                
+                // Remove all active classes
+                prayers.forEach(p => {
+                    document.getElementById(`${p.id}-item`).classList.remove('active');
+                });
+                
+                let nextPrayer = null;
+                let minutesUntil = 0;
+                
+                for (let prayer of prayers) {
+                    const prayerMinutes = timeToMinutes(prayer.time);
+                    if (currentTimeMinutes < prayerMinutes) {
+                        nextPrayer = prayer;
+                        minutesUntil = prayerMinutes - currentTimeMinutes;
+                        break;
+                    }
+                }
+                
+                // If no prayer found today, next is Subuh tomorrow
+                if (!nextPrayer) {
+                    nextPrayer = prayers[0];
+                    const minutesUntilMidnight = (24 * 60) - currentTimeMinutes;
+                    const minutesAfterMidnight = timeToMinutes(nextPrayer.time);
+                    minutesUntil = minutesUntilMidnight + minutesAfterMidnight;
+                }
+                
+                // Calculate hours, minutes, seconds
+                const totalSeconds = (minutesUntil * 60) - now.getSeconds();
                 const hours = Math.floor(totalSeconds / 3600);
                 const minutes = Math.floor((totalSeconds % 3600) / 60);
-                const seconds = Math.floor(totalSeconds % 60);
+                const seconds = totalSeconds % 60;
                 
                 document.getElementById('nextPrayerName').textContent = nextPrayer.name;
-                document.getElementById('countdown').textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            } else {
-                const secondsUntil = (nextPrayer.time - currentTime) * 3600;
-                const hours = Math.floor(secondsUntil / 3600);
-                const minutes = Math.floor((secondsUntil % 3600) / 60);
-                const seconds = Math.floor(secondsUntil % 60);
+                document.getElementById('countdown').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                 
-                document.getElementById('nextPrayerName').textContent = nextPrayer.name;
-                document.getElementById('countdown').textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                document.getElementById(`${nextPrayer.id}-item`).classList.add('active');
+                // Highlight next prayer if it's today
+                if (minutesUntil < 24 * 60) {
+                    document.getElementById(`${nextPrayer.id}-item`).classList.add('active');
+                }
             }
         }
 
-        // Update every second
-        updateDisplay();
-        setInterval(updateDisplay, 1000);
+        // Initialize
+        fetchPrayerTimes();
+        updateCountdown();
+        
+        // Update countdown every second
+        setInterval(updateCountdown, 1000);
+        
+        // Refresh prayer times at midnight
+        setInterval(() => {
+            const now = new Date();
+            if (now.getHours() === 0 && now.getMinutes() === 0) {
+                fetchPrayerTimes();
+            }
+        }, 60000); // Check every minute
     </script>
 </body>
 </html>
