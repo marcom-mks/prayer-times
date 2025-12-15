@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prayer Times - Singapore</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+            color: #fbbf24;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 289px;
+            background: rgba(6, 78, 59, 0.95);
+            border: 3px solid #fbbf24;
+            border-radius: 20px;
+            padding: 25px 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(251, 191, 36, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .ornament {
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #fbbf24, transparent);
+            margin: 10px auto;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .location {
+            font-size: 12px;
+            color: #d4af37;
+            letter-spacing: 1px;
+        }
+
+        .next-prayer {
+            background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+            border: 2px solid #fbbf24;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-prayer-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            color: #d4af37;
+        }
+
+        .next-prayer-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .countdown {
+            font-size: 24px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            color: #fcd34d;
+            text-shadow: 0 0 10px rgba(252, 211, 77, 0.3);
+        }
+
+        .prayer-times {
+            position: relative;
+        }
+
+        .prayer-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background: rgba(4, 120, 87, 0.3);
+            border-radius: 10px;
+            border-left: 4px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .prayer-item:hover {
+            background: rgba(4, 120, 87, 0.5);
+            transform: translateX(5px);
+        }
+
+        .prayer-item.active {
+            background: rgba(251, 191, 36, 0.2);
+            border-left-color: #fbbf24;
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+        }
+
+        .prayer-name {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .prayer-time {
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #fcd34d;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .current-time {
+            font-size: 11px;
+            color: #d4af37;
+            letter-spacing: 1px;
+        }
+
+        .date {
+            font-size: 10px;
+            color: #a78948;
+            margin-top: 5px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #fcd34d;
+            padding: 20px;
+        }
+
+        .error {
+            text-align: center;
+            color: #fca5a5;
+            padding: 10px;
+            font-size: 12px;
+        }
+
+        @media (min-width: 400px) {
+            .container {
+                max-width: 350px;
+                padding: 30px 25px;
+            }
+            
+            .title {
+                font-size: 24px;
+            }
+            
+            .prayer-name, .prayer-time {
+                font-size: 18px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                max-width: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="ornament"></div>
+            <div class="title">Prayer Times</div>
+            <div class="location">Singapore (MUIS)</div>
+            <div class="ornament"></div>
+        </div>
+
+        <div class="next-prayer">
+            <div class="next-prayer-label">Next Prayer</div>
+            <div class="next-prayer-name" id="nextPrayerName">Loading...</div>
+            <div class="countdown" id="countdown">--:--:--</div>
+        </div>
+
+        <div class="prayer-times">
+            <div class="prayer-item" id="subuh-item">
+                <span class="prayer-name">Subuh</span>
+                <span class="prayer-time" id="subuh">--:--</span>
+            </div>
+            <div class="prayer-item" id="zohor-item">
+                <span class="prayer-name">Zohor</span>
+                <span class="prayer-time" id="zohor">--:--</span>
+            </div>
+            <div class="prayer-item" id="asar-item">
+                <span class="prayer-name">Asar</span>
+                <span class="prayer-time" id="asar">--:--</span>
+            </div>
+            <div class="prayer-item" id="maghrib-item">
+                <span class="prayer-name">Maghrib</span>
+                <span class="prayer-time" id="maghrib">--:--</span>
+            </div>
+            <div class="prayer-item" id="isyak-item">
+                <span class="prayer-name">Isyak</span>
+                <span class="prayer-time" id="isyak">--:--</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="current-time" id="currentTime">--:--:--</div>
+            <div class="date" id="currentDate">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        let prayerData = {};
+        const API_URL = 'https://data.gov.sg/api/action/datastore_search?resource_id=d_a6a206cba471fe04b62dd886ef5eaf22';
+
+        // Fetch prayer times from MUIS API
+        async function fetchPrayerTimes() {
+            try {
+                const today = new Date();
+                const dateStr = today.toISOString().split('T')[0];
+                
+                // Fetch data with date filter
+                const response = await fetch(`${API_URL}&limit=1&filters={"Date":"${dateStr}"}`);
+                const data = await response.json();
+                
+                if (data.success && data.result.records.length > 0) {
+                    const record = data.result.records[0];
+                    prayerData = {
+                        subuh: record.Subuh,
+                        zohor: record.Zohor,
+                        asar: record.Asar,
+                        maghrib: record.Maghrib,
+                        isyak: record.Isyak
+                    };
+                    
+                    updatePrayerDisplay();
+                } else {
+                    console.error('No prayer data found for today');
+                }
+            } catch (error) {
+                console.error('Error fetching prayer times:', error);
+            }
+        }
+
+        function updatePrayerDisplay() {
+            // Display prayer times (format is already HH:mm:ss from API, we show HH:mm)
+            document.getElementById('subuh').textContent = prayerData.subuh.substring(0, 5);
+            document.getElementById('zohor').textContent = prayerData.zohor.substring(0, 5);
+            document.getElementById('asar').textContent = prayerData.asar.substring(0, 5);
+            document.getElementById('maghrib').textContent = prayerData.maghrib.substring(0, 5);
+            document.getElementById('isyak').textContent = prayerData.isyak.substring(0, 5);
+        }
+
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function updateCountdown() {
+            const now = new Date();
+            const currentHours = now.getHours().toString().padStart(2, '0');
+            const currentMinutes = now.getMinutes().toString().padStart(2, '0');
+            const currentSeconds = now.getSeconds().toString().padStart(2, '0');
+            
+            // Update current time
+            document.getElementById('currentTime').textContent = `${currentHours}:${currentMinutes}:${currentSeconds}`;
+            
+            // Update date
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-SG', options);
+            
+            // Calculate countdown to next prayer
+            if (Object.keys(prayerData).length > 0) {
+                const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+                
+                const prayers = [
+                    { name: 'Subuh', time: prayerData.subuh, id: 'subuh' },
+                    { name: 'Zohor', time: prayerData.zohor, id: 'zohor' },
+                    { name: 'Asar', time: prayerData.asar, id: 'asar' },
+                    { name: 'Maghrib', time: prayerData.maghrib, id: 'maghrib' },
+                    { name: 'Isyak', time: prayerData.isyak, id: 'isyak' }
+                ];
+                
+                // Remove all active classes
+                prayers.forEach(p => {
+                    document.getElementById(`${p.id}-item`).classList.remove('active');
+                });
+                
+                let nextPrayer = null;
+                let minutesUntil = 0;
+                
+                for (let prayer of prayers) {
+                    const prayerMinutes = timeToMinutes(prayer.time);
+                    if (currentTimeMinutes < prayerMinutes) {
+                        nextPrayer = prayer;
+                        minutesUntil = prayerMinutes - currentTimeMinutes;
+                        break;
+                    }
+                }
+                
+                // If no prayer found today, next is Subuh tomorrow
+                if (!nextPrayer) {
+                    nextPrayer = prayers[0];
+                    const minutesUntilMidnight = (24 * 60) - currentTimeMinutes;
+                    const minutesAfterMidnight = timeToMinutes(nextPrayer.time);
+                    minutesUntil = minutesUntilMidnight + minutesAfterMidnight;
+                }
+                
+                // Calculate hours, minutes, seconds
+                const totalSeconds = (minutesUntil * 60) - now.getSeconds();
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                
+                document.getElementById('nextPrayerName').textContent = nextPrayer.name;
+                document.getElementById('countdown').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                // Highlight next prayer if it's today
+                if (minutesUntil < 24 * 60) {
+                    document.getElementById(`${nextPrayer.id}-item`).classList.add('active');
+                }
+            }
+        }
+
+        // Initialize
+        fetchPrayerTimes();
+        updateCountdown();
+        
+        // Update countdown every second
+        setInterval(updateCountdown, 1000);
+        
+        // Refresh prayer times at midnight
+        setInterval(() => {
+            const now = new Date();
+            if (now.getHours() === 0 && now.getMinutes() === 0) {
+                fetchPrayerTimes();
+            }
+        }, 60000); // Check every minute
+    </script>
+</body>
+</html>
