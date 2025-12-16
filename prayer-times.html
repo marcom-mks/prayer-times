@@ -276,13 +276,20 @@
             }
         }
 
+        function formatTo12Hour(time24) {
+            const [hours, minutes] = time24.split(':').map(Number);
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const hours12 = hours % 12 || 12;
+            return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+        }
+
         function updatePrayerDisplay() {
-            // Display prayer times (format is already HH:mm:ss from API, we show HH:mm)
-            document.getElementById('subuh').textContent = prayerData.subuh.substring(0, 5);
-            document.getElementById('zohor').textContent = prayerData.zohor.substring(0, 5);
-            document.getElementById('asar').textContent = prayerData.asar.substring(0, 5);
-            document.getElementById('maghrib').textContent = prayerData.maghrib.substring(0, 5);
-            document.getElementById('isyak').textContent = prayerData.isyak.substring(0, 5);
+            // Display prayer times in 12-hour format with AM/PM
+            document.getElementById('subuh').textContent = formatTo12Hour(prayerData.subuh);
+            document.getElementById('zohor').textContent = formatTo12Hour(prayerData.zohor);
+            document.getElementById('asar').textContent = formatTo12Hour(prayerData.asar);
+            document.getElementById('maghrib').textContent = formatTo12Hour(prayerData.maghrib);
+            document.getElementById('isyak').textContent = formatTo12Hour(prayerData.isyak);
         }
 
         function timeToMinutes(timeStr) {
@@ -296,8 +303,11 @@
             const currentMinutes = now.getMinutes().toString().padStart(2, '0');
             const currentSeconds = now.getSeconds().toString().padStart(2, '0');
             
-            // Update current time
-            document.getElementById('currentTime').textContent = `${currentHours}:${currentMinutes}:${currentSeconds}`;
+            // Update current time in 12-hour format
+            const period = now.getHours() >= 12 ? 'PM' : 'AM';
+            const displayHours = now.getHours() % 12 || 12;
+            document.getElementById('currentTime').textContent = 
+                `${displayHours.toString().padStart(2, '0')}:${currentMinutes}:${currentSeconds} ${period}`;
             
             // Update date
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -338,26 +348,33 @@
                     const minutesUntilMidnight = (24 * 60) - currentTimeMinutes;
                     const minutesAfterMidnight = timeToMinutes(nextPrayer.time);
                     minutesUntil = minutesUntilMidnight + minutesAfterMidnight;
-                }
-                
-                // Calculate hours, minutes, seconds
-                const totalSeconds = (minutesUntil * 60) - now.getSeconds();
-                const hours = Math.floor(totalSeconds / 3600);
-                const minutes = Math.floor((totalSeconds % 3600) / 60);
-                const seconds = totalSeconds % 60;
-                
-                document.getElementById('nextPrayerName').textContent = nextPrayer.name;
-                document.getElementById('countdown').textContent = 
-                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                
-                // Highlight next prayer if it's today
-                if (minutesUntil < 24 * 60) {
+                    
+                    // Calculate for tomorrow's prayer
+                    const totalSeconds = (minutesUntil * 60) - now.getSeconds();
+                    const hours = Math.floor(totalSeconds / 3600);
+                    const minutes = Math.floor((totalSeconds % 3600) / 60);
+                    const seconds = totalSeconds % 60;
+                    
+                    document.getElementById('nextPrayerName').textContent = nextPrayer.name;
+                    document.getElementById('countdown').textContent = 
+                        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                } else {
+                    // Calculate for today's next prayer
+                    const totalSeconds = (minutesUntil * 60) - now.getSeconds();
+                    const hours = Math.floor(totalSeconds / 3600);
+                    const minutes = Math.floor((totalSeconds % 3600) / 60);
+                    const seconds = totalSeconds % 60;
+                    
+                    document.getElementById('nextPrayerName').textContent = nextPrayer.name;
+                    document.getElementById('countdown').textContent = 
+                        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                     document.getElementById(`${nextPrayer.id}-item`).classList.add('active');
                 }
             }
         }
 
         // Initialize
+
         fetchPrayerTimes();
         updateCountdown();
         
