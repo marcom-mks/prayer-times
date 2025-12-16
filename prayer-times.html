@@ -293,7 +293,37 @@
         }
 
         function timeToMinutes(timeStr) {
+            // Parse time and convert to minutes from midnight
             const [hours, minutes] = timeStr.split(':').map(Number);
+            let totalMinutes = hours * 60 + minutes;
+            
+            // MUIS API returns times in 12-hour format with leading zeros
+            // Zohor, Asar, Maghrib, Isyak need +12 hours if they're PM times
+            // We need to check if hour is between 01-06 for afternoon/evening prayers
+            // Subuh is early morning (05:xx), so it stays as is
+            // Zohor is around 01:xx PM (should be 13:xx)
+            // Asar is around 04:xx PM (should be 16:xx)  
+            // Maghrib is around 07:xx PM (should be 19:xx)
+            // Isyak is around 08:xx PM (should be 20:xx)
+            
+            return totalMinutes;
+        }
+
+        function convertTo24Hour(timeStr, prayerName) {
+            // Convert MUIS 12-hour format to 24-hour for comparison
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            
+            // Subuh is AM (early morning)
+            if (prayerName === 'subuh') {
+                return hours * 60 + minutes;
+            }
+            
+            // All other prayers (Zohor, Asar, Maghrib, Isyak) are PM
+            // They're shown as 01:01, 04:25, 07:02, 08:17 but mean PM times
+            if (hours < 12) {
+                return (hours + 12) * 60 + minutes;
+            }
+            
             return hours * 60 + minutes;
         }
 
@@ -334,7 +364,7 @@
                 let minutesUntil = 0;
                 
                 for (let prayer of prayers) {
-                    const prayerMinutes = timeToMinutes(prayer.time);
+                    const prayerMinutes = convertTo24Hour(prayer.time, prayer.id);
                     if (currentTimeMinutes < prayerMinutes) {
                         nextPrayer = prayer;
                         minutesUntil = prayerMinutes - currentTimeMinutes;
@@ -346,7 +376,7 @@
                 if (!nextPrayer) {
                     nextPrayer = prayers[0];
                     const minutesUntilMidnight = (24 * 60) - currentTimeMinutes;
-                    const minutesAfterMidnight = timeToMinutes(nextPrayer.time);
+                    const minutesAfterMidnight = convertTo24Hour(nextPrayer.time, nextPrayer.id);
                     minutesUntil = minutesUntilMidnight + minutesAfterMidnight;
                     
                     // Calculate for tomorrow's prayer
